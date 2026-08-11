@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<composite name="CreditCheckComposite"
+           revision="1.0"
+           label="CreditCheckSubService"
+           mode="active"
+           state="on"
+           xmlns="http://xmlns.oracle.com/sca/1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ui="http://xmlns.oracle.com/soa/designer/">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/CreditProcess"
+          location="CreditProcess.wsdl" importType="wsdl"/>
+
+  <service name="creditprocess_client_ep" ui:wsdlLocation="CreditProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/CreditProcess#wsdl.interface(CreditProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/CreditProcess#wsdl.endpoint(creditprocess_client_ep/CreditProcess_pt)"/>
+  </service>
+
+  <property name="productVersion" type="xs:string" many="false">12.2.1.4.0</property>
+
+  <component name="CreditProcess" version="2.0">
+    <implementation.bpel src="CreditProcess.bpel"/>
+    <componentType>
+      <service name="creditprocess_client" ui:wsdlLocation="CreditProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/CreditProcess#wsdl.interface(CreditProcess)"/>
+      </service>
+    </componentType>
+  </component>
+
+  <wire>
+    <source.uri>creditprocess_client_ep</source.uri>
+    <target.uri>CreditProcess/creditprocess_client</target.uri>
+  </wire>
+
+</composite>

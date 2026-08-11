@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Microservices Orchestration Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-shadow: rgba(0, 0, 0, 0.3);
+            --accent-primary: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.5);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Status colors */
+            --color-submitted: #38bdf8;
+            --color-credit: #a855f7;
+            --color-valuation: #f43f5e;
+            --color-underwriting: #eab308;
+            --color-pending: #fb7185;
+            --color-approved: #22c55e;
+            --color-rejected: #ef4444;
+            --color-disbursed: #10b981;
+            --color-cancelled: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            flex: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Glassmorphic Panel Base */
+        .panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px var(--glass-shadow);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            border-left: 4px solid var(--accent-primary);
+            padding-left: 8px;
+            letter-spacing: -0.2px;
+        }
+
+        /* Forms styling */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea, select {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+        }
+
+        .row-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.8rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Predefined profiles help */
+        .profiles-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px dashed var(--glass-border);
+        }
+
+        .profile-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .profile-chip:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        /* Loan List styling */
+        .loan-list-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            padding-right: 4px;
+        }
+
+        .loan-list-wrapper::-webkit-scrollbar {
+            width: 4px;
+        }
+        .loan-list-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .loan-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loan-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: scale(1.01);
+        }
+
+        .loan-card.active {
+            background: rgba(99, 102, 241, 0.08);
+            border-color: var(--accent-primary);
+            box-shadow: inset 0 0 10px rgba(99, 102, 241, 0.15);
+        }
+
+        .loan-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .loan-card .name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .loan-card .amount {
+            font-weight: 700;
+            color: #818cf8;
+            font-size: 1rem;
+        }
+
+        .loan-card .details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.3rem;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .badge-submitted { background: rgba(56, 189, 248, 0.15); color: var(--color-submitted); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .badge-credit_check_completed { background: rgba(168, 85, 247, 0.15); color: var(--color-credit); border: 1px solid rgba(168, 85, 247, 0.3); }
+        .badge-valuation_completed { background: rgba(244, 63, 94, 0.15); color: var(--color-valuation); border: 1px solid rgba(244, 63, 94, 0.3); }
+        .badge-underwriting_completed { background: rgba(234, 179, 8, 0.15); color: var(--color-underwriting); border: 1px solid rgba(234, 179, 8, 0.3); }
+        .badge-pending_manual_review { background: rgba(251, 113, 133, 0.15); color: var(--color-pending); border: 1px solid rgba(251, 113, 133, 0.3); animation: pulse 2s infinite; }
+        .badge-approved { background: rgba(34, 197, 94, 0.15); color: var(--color-approved); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .badge-rejected { background: rgba(239, 68, 68, 0.15); color: var(--color-rejected); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-disbursed { background: rgba(16, 185, 129, 0.15); color: var(--color-disbursed); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-cancelled { background: rgba(107, 114, 128, 0.15); color: var(--color-cancelled); border: 1px solid rgba(107, 114, 128, 0.3); }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        /* Detail Panel Layout */
+        .detail-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .welcome-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 4rem 2rem;
+            border: 2px dashed rgba(255,255,255,0.03);
+            border-radius: 12px;
+        }
+
+        .welcome-panel svg {
+            width: 80px;
+            height: 80px;
+            stroke: rgba(99, 102, 241, 0.4);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Summary Header Info */
+        .summary-header-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(192, 132, 252, 0.04) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+        }
+
+        .summary-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .summary-stat .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-stat .value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Underwriting review manual panel */
+        .underwriter-actions-card {
+            background: rgba(251, 113, 133, 0.05);
+            border: 1px solid rgba(251, 113, 133, 0.2);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        /* Interactive Topology Map */
+        .network-visualization {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .nodes-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            padding: 1.5rem 0.5rem;
+            overflow-x: auto;
+        }
+
+        .nodes-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.08);
+            z-index: 1;
+        }
+
+        .node {
+            width: 76px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 2;
+            position: relative;
+            text-align: center;
+        }
+
+        .node-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .node.active .node-circle {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px var(--accent-glow);
+            color: white;
+            background: var(--accent-primary);
+        }
+
+        .node.completed .node-circle {
+            border-color: #22c55e;
+            color: white;
+            background: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+        }
+
+        .node.failed .node-circle {
+            border-color: #ef4444;
+            color: white;
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .node.warning .node-circle {
+            border-color: #eab308;
+            color: white;
+            background: #eab308;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
+        }
+
+        .node-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .node.active .node-name {
+            color: var(--text-main);
+        }
+
+        /* Trace logs Comparison side by side */
+        .trace-view-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .trace-grid-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .trace-grid-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #818cf8;
+        }
+
+        .trace-rows-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            max-height: 480px;
+            padding-right: 4px;
+        }
+
+        .trace-rows-wrapper::-webkit-scrollbar {
+            width: 4px;
+        }
+        .trace-rows-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .trace-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(255,255,255,0.02);
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+            transition: all 0.25s ease;
+        }
+
+        .trace-row:hover {
+            background: rgba(255,255,255,0.03);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .trace-row::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1px;
+            background: var(--glass-border);
+        }
+
+        .trace-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .trace-cell .cell-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .trace-cell .cell-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
+        .trace-cell .xml-mapping {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 6px;
+            padding: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #38bdf8;
+            margin-top: 0.3rem;
+            overflow-x: auto;
+        }
+
+        /* Badge details for cell */
+        .step-badge {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .step-success { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .step-warning { background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .step-failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .step-pending { background: rgba(251, 113, 133, 0.15); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.3); }
+        .step-compensated { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+        /* Animation utilities */
+        .fade-in {
+            animation: fadeIn 0.4s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Loan Application Orchestrator</h1>
+            <div class="subtitle">Spring Boot Microservices &lt;=&gt; OSB & Oracle SOA Suite Reference Dashboard</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="connection-status" class="status-badge badge-disbursed">SYSTEMS RUNNING</div>
+            <button onclick="loadLoans()" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; box-shadow: none;">Refresh</button>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <!-- LEFT PANEL: Submit & List -->
+        <div class="panel">
+            
+            <div>
+                <h2>Apply for Loan</h2>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Submit a simulated credit application request</p>
+            </div>
+
+            <form id="loanForm" onsubmit="submitLoanForm(event)" class="fade-in">
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <label>Borrower Name</label>
+                    <input type="text" id="applicantName" placeholder="e.g. Harry Potter" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <label>SSN (Select profile below)</label>
+                    <input type="text" id="ssn" placeholder="000-00-1111" required>
+                </div>
+
+                <!-- Interactive Profile Pre-selection -->
+                <div style="margin-bottom: 0.8rem;">
+                    <label style="display:block; margin-bottom: 0.3rem;">Quick Profiles</label>
+                    <div class="profiles-container">
+                        <div class="profile-chip" onclick="setProfile('Harry Potter', '000-00-1111', 120000, 10000, '4 Privet Dr', 500000)">Auto Approve</div>
+                        <div class="profile-chip" onclick="setProfile('Ronald Weasley', '000-00-2222', 150000, 3000, 'The Burrow', 200000)">Auto Reject</div>
+                        <div class="profile-chip" onclick="setProfile('Hermione Granger', '000-00-3333', 180000, 8000, 'Granger Res', 400000)">Manual Review</div>
+                        <div class="profile-chip" onclick="setProfile('Neville Longbottom', '000-00-4444', 100000, 6000, 'Greenhouse 3', 350000)">Retry Timeout</div>
+                        <div class="profile-chip" onclick="setProfile('Tom Riddle', '000-00-9999', 80000, 7000, 'Orphanage St', 300000)">Fraud Watchlist</div>
+                        <div class="profile-chip" onclick="setProfile('Lord Voldemort', '000-00-6666', 999999, 99999, 'Little Hangleton', 800000)">Sanction Block</div>
+                    </div>
+                </div>
+
+                <div class="row-grid" style="margin-bottom: 0.8rem;">
+                    <div class="form-group">
+                        <label>Loan Amount ($)</label>
+                        <input type="number" id="loanAmount" value="100000" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Income ($)</label>
+                        <input type="number" id="monthlyIncome" value="6000" min="1" required>
+                    </div>
+                </div>
+
+                <div class="row-grid" style="margin-bottom: 1.2rem;">
+                    <div class="form-group">
+                        <label>Property Address</label>
+                        <input type="text" id="propertyAddress" value="4 Privet Drive, Surrey" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Value ($)</label>
+                        <input type="number" id="propertyValue" value="500000" min="1" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" style="width: 100%;">Submit Loan Application</button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 0.5rem 0;">
+
+            <div>
+                <h2>Submitted Applications</h2>
+                <div id="loanList" class="loan-list-wrapper" style="margin-top: 0.8rem;">
+                    <!-- Loan cards loaded dynamically -->
+                    <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">
+                        No applications submitted yet.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT PANEL: Details & Audit Trace Logs -->
+        <div id="detailPanel" class="panel detail-panel">
+            
+            <!-- Welcome screen if no loan selected -->
+            <div id="welcomePanel" class="welcome-panel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <h3>Select a Loan Application</h3>
+                <p style="font-size: 0.85rem; max-width: 320px; margin-top: 0.5rem;">Choose an application from the sidebar to inspect its orchestration status and side-by-side SOA Suite traces.</p>
+            </div>
+
+            <!-- Dashboard Content (hidden by default) -->
+            <div id="dashboardDetails" style="display: none; flex-direction: column; gap: 1.5rem; height: 100%;">
+                
+                <!-- 1. Stats overview -->
+                <div class="summary-header-card fade-in">
+                    <div class="summary-stat">
+                        <div class="label">Borrower Name</div>
+                        <div class="value" id="lblApplicantName">-</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="label">Metrics (DTI / LTV)</div>
+                        <div class="value" id="lblMetrics">-</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="label">Credit Score</div>
+                        <div class="value" id="lblCreditScore">-</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="label">Workflow State</div>
+                        <div><span id="lblStatus" class="status-badge">-</span></div>
+                    </div>
+                </div>
+
+                <!-- 2. Manual Underwriter Action Panel (displays when manual review is pending) -->
+                <div id="underwriterActions" class="underwriter-actions-card fade-in" style="display: none;">
+                    <h3 style="font-size: 0.95rem; font-weight: 600; color: #fb7185; text-transform: uppercase;">Pending Human Task: Manual Underwriting Review</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);" id="lblUnderwriteReason">Review is required because criteria values are elevated.</p>
+                    <div class="form-group" style="margin-top: 0.4rem;">
+                        <input type="text" id="underwriterComments" placeholder="Enter review decision comments (e.g., income verified, collateral approved)..." style="width: 100%;">
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 0.2rem;">
+                        <button onclick="submitManualDecision(true)" class="btn" style="background: #22c55e; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); padding: 0.5rem 1rem; font-size: 0.85rem;">Approve Task</button>
+                        <button onclick="submitManualDecision(false)" class="btn" style="background: #ef4444; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); padding: 0.5rem 1rem; font-size: 0.85rem;">Reject Task</button>
+                        <button onclick="cancelLoanWorkflow()" class="btn" style="background: #6b7280; box-shadow: none; padding: 0.5rem 1rem; font-size: 0.85rem; margin-left: auto;">Withdraw / Cancel App</button>
+                    </div>
+                </div>
+
+                <!-- 3. Network Topology Visualization -->
+                <div class="network-visualization fade-in">
+                    <h3 style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted);">Microservices Execution Topology</h3>
+                    <div class="nodes-container">
+                        <div class="node" id="node-loan">
+                            <div class="node-circle">Ingest</div>
+                            <div class="node-name">Loan API</div>
+                        </div>
+                        <div class="node" id="node-credit">
+                            <div class="node-circle">Score</div>
+                            <div class="node-name">Credit</div>
+                        </div>
+                        <div class="node" id="node-valuation">
+                            <div class="node-circle">Appraise</div>
+                            <div class="node-name">Valuation</div>
+                        </div>
+                        <div class="node" id="node-underwriting">
+                            <div class="node-circle">Rules</div>
+                            <div class="node-name">Rule Engine</div>
+                        </div>
+                        <div class="node" id="node-disbursement">
+                            <div class="node-circle">Pay</div>
+                            <div class="node-name">Core Bank</div>
+                        </div>
+                        <div class="node" id="node-notification">
+                            <div class="node-circle">Alert</div>
+                            <div class="node-name">Notification</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Step-by-Step comparison traces -->
+                <div class="trace-view-container fade-in">
+                    <div class="trace-grid-header">
+                        <h3>Spring Boot / Distributed Trace</h3>
+                        <h3>OSB & Oracle SOA Suite Mapping</h3>
+                    </div>
+                    
+                    <div id="traceRows" class="trace-rows-wrapper">
+                        <!-- Dynamic traces -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const API_BASE = "/api/loans";
+        let activeLoanId = null;
+        let pollingInterval = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadLoans();
+        });
+
+        // Set predefined profile values
+        function setProfile(name, ssn, amount, income, addr, val) {
+            document.getElementById("applicantName").value = name;
+            document.getElementById("ssn").value = ssn;
+            document.getElementById("loanAmount").value = amount;
+            document.getElementById("monthlyIncome").value = income;
+            document.getElementById("propertyAddress").value = addr;
+            document.getElementById("propertyValue").value = val;
+        }
+
+        // Fetch and load all loan applications in left list
+        function loadLoans() {
+            fetch(API_BASE)
+                .then(res => res.json())
+                .then(loans => {
+                    const list = document.getElementById("loanList");
+                    if (loans.length === 0) {
+                        list.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">No applications submitted yet.</div>`;
+                        return;
+                    }
+                    
+                    // Sort by newest first
+                    loans.sort((a,b) => b.id - a.id);
+
+                    list.innerHTML = loans.map(loan => {
+                        const formattedAmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(loan.loanAmount);
+                        const isSelected = loan.id === activeLoanId ? "active" : "";
+                        const dateStr = new Date(loan.submissionDate).toLocaleString();
+                        return `
+                            <div class="loan-card ${isSelected}" onclick="selectLoan(${loan.id})">
+                                <div class="card-header">
+                                    <span class="name">${escapeHtml(loan.applicantName)}</span>
+                                    <span class="amount">${formattedAmt}</span>
+                                </div>
+                                <span class="status-badge badge-${loan.status.toLowerCase()}">${loan.status.replace(/_/g, ' ')}</span>
+                                <div class="details">
+                                    <span>ID: ${loan.id}</span>
+                                    <span>${dateStr}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(err => {
+                    console.error("Error loading loans: ", err);
+                    document.getElementById("connection-status").className = "status-badge badge-rejected";
+                    document.getElementById("connection-status").textContent = "CONNECTION OFFLINE";
+                });
+        }
+
+        // Submit form to create new application
+        function submitLoanForm(event) {
+            event.preventDefault();
+            const body = {
+                applicantName: document.getElementById("applicantName").value,
+                ssn: document.getElementById("ssn").value,
+                loanAmount: parseFloat(document.getElementById("loanAmount").value),
+                monthlyIncome: parseFloat(document.getElementById("monthlyIncome").value),
+                propertyAddress: document.getElementById("propertyAddress").value,
+                propertyValue: parseFloat(document.getElementById("propertyValue").value)
+            };
+
+            fetch(API_BASE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(async res => {
+                if (res.status === 403) {
+                    const data = await res.json();
+                    alert("Forbidden Application submission:\n" + data.error);
+                    return;
+                }
+                if (!res.ok) {
+                    alert("Error submitting loan application. Check inputs.");
+                    return;
+                }
+                const saved = await res.json();
+                loadLoans();
+                selectLoan(saved.id);
+                // Reset form fields
+                document.getElementById("loanForm").reset();
+            })
+            .catch(err => {
+                alert("Connection error occurred when submitting loan.");
+            });
+        }
+
+        // Select loan and view details
+        function selectLoan(id) {
+            activeLoanId = id;
+            
+            // Highlight selected card in list
+            const cards = document.querySelectorAll(".loan-card");
+            cards.forEach(card => card.classList.remove("active"));
+            loadLoans(); // Keep list updated and active items visually matching
+
+            document.getElementById("welcomePanel").style.display = "none";
+            document.getElementById("dashboardDetails").style.display = "flex";
+
+            // Clear active interval
+            if (pollingInterval) clearInterval(pollingInterval);
+
+            // Fetch details immediately
+            fetchDetails(id);
+
+            // Poll details for real-time trace updating if status isn't terminal
+            pollingInterval = setInterval(() => {
+                fetchDetails(id);
+            }, 1500);
+        }
+
+        // Fetch single loan details and logs
+        function fetchDetails(id) {
+            if (activeLoanId !== id) return;
+
+            // Fetch Loan Entity
+            fetch(`${API_BASE}/${id}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Loan not found");
+                    return res.json();
+                })
+                .then(loan => {
+                    // Update stats header
+                    document.getElementById("lblApplicantName").textContent = loan.applicantName;
+                    
+                    const dtiPct = loan.dtiRatio ? (loan.dtiRatio * 100).toFixed(1) + "%" : "N/A";
+                    const ltvPct = loan.ltvRatio ? (loan.ltvRatio * 100).toFixed(1) + "%" : "N/A";
+                    document.getElementById("lblMetrics").textContent = `${dtiPct} DTI / ${ltvPct} LTV`;
+                    document.getElementById("lblCreditScore").textContent = loan.creditScore !== null ? loan.creditScore : "Evaluating...";
+
+                    const statusLbl = document.getElementById("lblStatus");
+                    statusLbl.className = `status-badge badge-${loan.status.toLowerCase()}`;
+                    statusLbl.textContent = loan.status.replace(/_/g, ' ');
+
+                    // Check if Manual Review is pending
+                    const underwritePanel = document.getElementById("underwriterActions");
+                    if (loan.status === "PENDING_MANUAL_REVIEW") {
+                        underwritePanel.style.display = "flex";
+                        document.getElementById("lblUnderwriteReason").textContent = loan.decisionNotes || "Manual verification of borrower portfolio and LTV/DTI required.";
+                    } else {
+                        underwritePanel.style.display = "none";
+                    }
+
+                    // Update topology nodes based on status
+                    updateTopology(loan.status, loan.decisionNotes);
+
+                    // Fetch logs
+                    return fetch(`${API_BASE}/${id}/logs`);
+                })
+                .then(res => res.json())
+                .then(logs => {
+                    const traceRows = document.getElementById("traceRows");
+                    if (logs.length === 0) {
+                        traceRows.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">Trace sequence starting...</div>`;
+                        return;
+                    }
+
+                    traceRows.innerHTML = logs.map(log => {
+                        const stepClass = getStepClass(log.status);
+                        const timeStr = new Date(log.timestamp).toLocaleTimeString();
+                        return `
+                            <div class="trace-row fade-in">
+                                <div class="trace-cell">
+                                    <div class="cell-title">
+                                        <span>${escapeHtml(log.stageName)}</span>
+                                        <span class="step-badge ${stepClass}">${log.status}</span>
+                                    </div>
+                                    <div class="cell-desc">${escapeHtml(log.springBootDetail)}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: auto; padding-top: 4px;">Time: ${timeStr}</div>
+                                </div>
+                                <div class="trace-cell">
+                                    <div class="cell-title" style="color: #c084fc;">
+                                        <span>OSB &amp; SOA Mapping</span>
+                                    </div>
+                                    <div class="cell-desc" style="font-style: italic;">${escapeHtml(log.osbSoaSuiteMapping)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Stop polling if loan reaches a terminal state
+                    const lastLog = logs[logs.length - 1];
+                    if (lastLog && (lastLog.stageName.includes("Completed") || lastLog.springBootDetail.includes("compensated"))) {
+                        if (pollingInterval) {
+                            clearInterval(pollingInterval);
+                            pollingInterval = null;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching detail data: ", err);
+                    if (pollingInterval) clearInterval(pollingInterval);
+                });
+        }
+
+        // Submit manual underwriter action (Approve/Reject)
+        function submitManualDecision(isApprove) {
+            const comments = document.getElementById("underwriterComments").value || (isApprove ? "Approved manually" : "Rejected manually");
+            const endpoint = isApprove ? `${API_BASE}/${activeLoanId}/approve` : `${API_BASE}/${activeLoanId}/reject`;
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ comments: comments })
+            })
+            .then(res => {
+                if (res.ok) {
+                    document.getElementById("underwriterComments").value = "";
+                    loadLoans();
+                    fetchDetails(activeLoanId);
+                } else {
+                    alert("Error submitting decision.");
+                }
+            })
+            .catch(err => alert("Connection error."));
+        }
+
+        // Cancel application workflow
+        function cancelLoanWorkflow() {
+            if (!confirm("Are you sure you want to cancel and withdraw this application?")) return;
+            fetch(`${API_BASE}/${activeLoanId}/cancel`, { method: 'POST' })
+            .then(res => {
+                if (res.ok) {
+                    loadLoans();
+                    fetchDetails(activeLoanId);
+                } else {
+                    alert("Error cancelling workflow.");
+                }
+            });
+        }
+
+        // Node status helper in visual network representation
+        function updateTopology(status, notes) {
+            const nodes = {
+                'node-loan': ['SUBMITTED', 'CREDIT_CHECK_COMPLETED', 'VALUATION_COMPLETED', 'UNDERWRITING_COMPLETED', 'PENDING_MANUAL_REVIEW', 'APPROVED', 'REJECTED', 'DISBURSED', 'CANCELLED'],
+                'node-credit': ['CREDIT_CHECK_COMPLETED', 'VALUATION_COMPLETED', 'UNDERWRITING_COMPLETED', 'PENDING_MANUAL_REVIEW', 'APPROVED', 'REJECTED', 'DISBURSED', 'CANCELLED'],
+                'node-valuation': ['VALUATION_COMPLETED', 'UNDERWRITING_COMPLETED', 'PENDING_MANUAL_REVIEW', 'APPROVED', 'REJECTED', 'DISBURSED', 'CANCELLED'],
+                'node-underwriting': ['UNDERWRITING_COMPLETED', 'PENDING_MANUAL_REVIEW', 'APPROVED', 'REJECTED', 'DISBURSED', 'CANCELLED'],
+                'node-disbursement': ['DISBURSED'],
+                'node-notification': ['APPROVED', 'REJECTED', 'DISBURSED', 'CANCELLED']
+            };
+
+            const stepsOrder = ['SUBMITTED', 'CREDIT_CHECK_COMPLETED', 'VALUATION_COMPLETED', 'UNDERWRITING_COMPLETED', 'PENDING_MANUAL_REVIEW', 'APPROVED', 'REJECTED', 'DISBURSED', 'CANCELLED'];
+            const currentIndex = stepsOrder.indexOf(status);
+
+            Object.keys(nodes).forEach(nodeId => {
+                const nodeEl = document.getElementById(nodeId);
+                nodeEl.className = "node";
+
+                // If credit failed and status is REJECTED
+                if (nodeId === 'node-credit' && status === 'REJECTED' && notes && notes.includes("Credit check")) {
+                    nodeEl.classList.add("failed");
+                } 
+                // If valuation triggered compensation/refund
+                else if (nodeId === 'node-valuation' && status === 'REJECTED' && notes && notes.includes("Fraud Watchlist")) {
+                    nodeEl.classList.add("warning"); // Highlight refund status
+                } 
+                // General state propagation
+                else if (nodes[nodeId].includes(status)) {
+                    // Check if node represents the current or past steps
+                    if (nodeId === 'node-disbursement' && status === 'DISBURSED') {
+                        nodeEl.classList.add("completed");
+                    } else if (nodeId === 'node-underwriting' && status === 'PENDING_MANUAL_REVIEW') {
+                        nodeEl.classList.add("warning");
+                    } else if (nodeId === 'node-underwriting' && status === 'REJECTED') {
+                        nodeEl.classList.add("failed");
+                    } else if (nodeId === 'node-notification' && (status === 'DISBURSED' || status === 'REJECTED' || status === 'CANCELLED')) {
+                        nodeEl.classList.add("completed");
+                    } else {
+                        nodeEl.classList.add("completed");
+                    }
+                } else {
+                    // Highlight the upcoming node as active if it's the next step
+                    if (nodeId === 'node-credit' && status === 'SUBMITTED') {
+                        nodeEl.classList.add("active");
+                    } else if (nodeId === 'node-valuation' && status === 'CREDIT_CHECK_COMPLETED') {
+                        nodeEl.classList.add("active");
+                    } else if (nodeId === 'node-underwriting' && status === 'VALUATION_COMPLETED') {
+                        nodeEl.classList.add("active");
+                    } else if (nodeId === 'node-disbursement' && status === 'APPROVED') {
+                        nodeEl.classList.add("active");
+                    }
+                }
+            });
+        }
+
+        // Trace badge styling helper
+        function getStepClass(status) {
+            switch (status) {
+                case 'SUCCESS': return 'step-success';
+                case 'WARNING': return 'step-warning';
+                case 'FAILED': return 'step-failed';
+                case 'PENDING': return 'step-pending';
+                case 'COMPENSATED': return 'step-compensated';
+                case 'REJECTED': return 'step-failed';
+                default: return 'step-success';
+            }
+        }
+
+        // Simple HTML Escaper
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

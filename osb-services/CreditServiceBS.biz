@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml-fragment xmlns:ser="http://www.bea.com/wli/sb/services" 
+              xmlns:tran="http://www.bea.com/wli/sb/transports" 
+              xmlns:env="http://www.bea.com/wli/sb/transports/env" 
+              xmlns:http="http://www.bea.com/wli/sb/transports/http" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <ser:coreEntry>
+        <ser:description>Business Service targeting the Equifax and multi-bureau credit microservice endpoint.</ser:description>
+        <ser:binding type="SOAP" xsi:type="con:SoapBindingType" xmlns:con="http://www.bea.com/wli/sb/services/bindings/config">
+            <con:wsdl ref="soa-credit-composite/CreditProcess"/>
+            <con:port>
+                <con:name>CreditProcess_pt</con:name>
+                <con:namespace>http://xmlns.oracle.com/LoanOrchestration/CreditProcess</con:namespace>
+            </con:port>
+        </ser:binding>
+        <ser:opsInfo>
+            <ser:operation name="getCreditScore">
+                <ser:retryCount>3</ser:retryCount>
+                <ser:retryInterval>2</ser:retryInterval>
+            </ser:operation>
+        </ser:opsInfo>
+    </ser:coreEntry>
+    <ser:endpointConfig>
+        <tran:provider-id>http</tran:provider-id>
+        <tran:inbound>false</tran:inbound>
+        <tran:URI>
+            <env:value>http://localhost:8082/soap/CreditProcess</env:value>
+        </tran:URI>
+        <tran:outbound-properties>
+            <tran:retry-interval>2</tran:retry-interval>
+            <tran:retry-count>3</tran:retry-count>
+        </tran:outbound-properties>
+        <tran:provider-specific xsi:type="http:HttpEndPointConfiguration">
+            <http:outbound-properties>
+                <http:request-method>POST</http:request-method>
+                <http:timeout>3</http:timeout>
+                <http:connection-timeout>1</http:connection-timeout>
+                <http:follow-redirects>false</http:follow-redirects>
+                <http:chunked-streaming-mode>true</http:chunked-streaming-mode>
+            </http:outbound-properties>
+        </tran:provider-specific>
+    </ser:endpointConfig>
+</xml-fragment>

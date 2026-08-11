@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  credit-service:
+    build:
+      context: ./credit-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    networks:
+      - loan-network
+
+  valuation-service:
+    build:
+      context: ./valuation-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    networks:
+      - loan-network
+
+  underwriting-service:
+    build:
+      context: ./underwriting-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    networks:
+      - loan-network
+
+  disbursement-service:
+    build:
+      context: ./disbursement-service
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    networks:
+      - loan-network
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8086"
+    networks:
+      - loan-network
+
+  loan-service:
+    build:
+      context: ./loan-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVICE_CREDIT_URL=http://credit-service:8082/api/credit
+      - SERVICE_VALUATION_URL=http://valuation-service:8083/api/valuation
+      - SERVICE_UNDERWRITING_URL=http://underwriting-service:8084/api/underwriting
+      - SERVICE_DISBURSEMENT_URL=http://disbursement-service:8085/api/disbursement
+      - SERVICE_NOTIFICATION_URL=http://notification-service:8086/api/notification
+    depends_on:
+      - credit-service
+      - valuation-service
+      - underwriting-service
+      - disbursement-service
+      - notification-service
+    ports:
+      - "8081:8081"
+    networks:
+      - loan-network
+
+networks:
+  loan-network:
+    driver: bridge

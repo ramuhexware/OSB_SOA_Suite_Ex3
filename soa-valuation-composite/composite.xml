@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<composite name="ValuationComposite"
+           revision="1.0"
+           label="ValuationSubService"
+           mode="active"
+           state="on"
+           xmlns="http://xmlns.oracle.com/sca/1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ui="http://xmlns.oracle.com/soa/designer/">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess"
+          location="ValuationProcess.wsdl" importType="wsdl"/>
+
+  <service name="valuationprocess_client_ep" ui:wsdlLocation="ValuationProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess#wsdl.interface(ValuationProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess#wsdl.endpoint(valuationprocess_client_ep/ValuationProcess_pt)"/>
+  </service>
+
+  <property name="productVersion" type="xs:string" many="false">12.2.1.4.0</property>
+
+  <component name="ValuationProcess" version="2.0">
+    <implementation.bpel src="ValuationProcess.bpel"/>
+    <componentType>
+      <service name="valuationprocess_client" ui:wsdlLocation="ValuationProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess#wsdl.interface(ValuationProcess)"/>
+      </service>
+    </componentType>
+  </component>
+
+  <wire>
+    <source.uri>valuationprocess_client_ep</source.uri>
+    <target.uri>ValuationProcess/valuationprocess_client</target.uri>
+  </wire>
+
+</composite>

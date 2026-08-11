@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<process name="UnderwritingProcess"
+         targetNamespace="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess"
+         xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:client="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess"
+         xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/LoanOrchestration/types">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess" location="UnderwritingProcess.wsdl" importType="wsdl"/>
+
+  <partnerLinks>
+    <partnerLink name="underwritingprocess_client" partnerLinkType="client:UnderwritingProcess" myRole="UnderwritingProcessProvider"/>
+  </partnerLinks>
+
+  <variables>
+    <variable name="inputVar" messageType="client:UnderwritingRequestMessage"/>
+    <variable name="outputVar" messageType="client:UnderwritingResponseMessage"/>
+  </variables>
+
+  <sequence name="main">
+    <receive name="receiveInput" partnerLink="underwritingprocess_client" portType="client:UnderwritingProcess" operation="processUnderwriting" variable="inputVar" createInstance="yes"/>
+    
+    <!-- Rule Evaluation Logic -->
+    <if name="EvaluateRules">
+      <!-- High Credit Score / Low Loan-to-Value -> Auto Approve -->
+      <condition>$inputVar.payload/ns1:creditScore &gt;= 700 and (($inputVar.payload/ns1:loanAmount div $inputVar.payload/ns1:propertyValue) &lt; 0.8)</condition>
+      <assign name="AssignAutoApproved">
+        <copy>
+          <from>'AUTO_APPROVED'</from>
+          <to>$outputVar.payload/ns1:decision</to>
+        </copy>
+        <copy>
+          <from>'Credit score and Loan-to-Value ratios are optimal. Automatically approved by rules composite.'</from>
+          <to>$outputVar.payload/ns1:notes</to>
+        </copy>
+      </assign>
+      
+      <!-- Very Low Credit Score -> Auto Reject -->
+      <bpel:elseif>
+        <bpel:condition>$inputVar.payload/ns1:creditScore &lt; 500</bpel:condition>
+        <assign name="AssignAutoRejected">
+          <copy>
+            <from>'AUTO_REJECTED'</from>
+            <to>$outputVar.payload/ns1:decision</to>
+          </copy>
+          <copy>
+            <from>'Credit score is below minimum threshold (500). Automatically rejected by rules composite.'</from>
+            <to>$outputVar.payload/ns1:notes</to>
+          </copy>
+        </assign>
+      </bpel:elseif>
+      
+      <!-- Borderline cases -> Manual review queue -->
+      <bpel:else>
+        <assign name="AssignManualReview">
+          <copy>
+            <from>'MANUAL_REVIEW'</from>
+            <to>$outputVar.payload/ns1:decision</to>
+          </copy>
+          <copy>
+            <from>'Refer to manual underwriter for review due to elevated risk parameters.'</from>
+            <to>$outputVar.payload/ns1:notes</to>
+          </copy>
+        </assign>
+      </bpel:else>
+    </if>
+    
+    <reply name="replyOutput" partnerLink="underwritingprocess_client" portType="client:UnderwritingProcess" operation="processUnderwriting" variable="outputVar"/>
+  </sequence>
+</process>

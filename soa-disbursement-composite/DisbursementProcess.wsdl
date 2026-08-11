@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="DisbursementProcess"
+                  targetNamespace="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess"
+                  xmlns:tns="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess"
+                  xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+  <wsdl:types>
+    <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:import namespace="http://xmlns.oracle.com/LoanOrchestration/types" schemaLocation="../loan-service-soa/LoanWorkflow.xsd" />
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="DisbursementRequestMessage">
+    <wsdl:part name="payload" element="types:DisbursementRequest"/>
+  </wsdl:message>
+  <wsdl:message name="DisbursementResponseMessage">
+    <wsdl:part name="payload" element="types:DisbursementResponse"/>
+  </wsdl:message>
+
+  <wsdl:portType name="DisbursementProcess">
+    <wsdl:operation name="processDisbursement">
+      <wsdl:input message="tns:DisbursementRequestMessage"/>
+      <wsdl:output message="tns:DisbursementResponseMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="DisbursementProcessBinding" type="tns:DisbursementProcess">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="processDisbursement">
+      <soap:operation soapAction="processDisbursement"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="disbursementprocess_client_ep">
+    <wsdl:port name="DisbursementProcess_pt" binding="tns:DisbursementProcessBinding">
+      <soap:address location="http://localhost:8085/soap/DisbursementProcess"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

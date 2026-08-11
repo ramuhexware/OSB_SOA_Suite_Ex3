@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="UnderwritingProcess"
+                  targetNamespace="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess"
+                  xmlns:tns="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess"
+                  xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+  <wsdl:types>
+    <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:import namespace="http://xmlns.oracle.com/LoanOrchestration/types" schemaLocation="../loan-service-soa/LoanWorkflow.xsd" />
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="UnderwritingRequestMessage">
+    <wsdl:part name="payload" element="types:UnderwritingRequest"/>
+  </wsdl:message>
+  <wsdl:message name="UnderwritingResponseMessage">
+    <wsdl:part name="payload" element="types:UnderwritingResponse"/>
+  </wsdl:message>
+
+  <wsdl:portType name="UnderwritingProcess">
+    <wsdl:operation name="processUnderwriting">
+      <wsdl:input message="tns:UnderwritingRequestMessage"/>
+      <wsdl:output message="tns:UnderwritingResponseMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="UnderwritingProcessBinding" type="tns:UnderwritingProcess">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="processUnderwriting">
+      <soap:operation soapAction="processUnderwriting"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="underwritingprocess_client_ep">
+    <wsdl:port name="UnderwritingProcess_pt" binding="tns:UnderwritingProcessBinding">
+      <soap:address location="http://localhost:8084/soap/UnderwritingProcess"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

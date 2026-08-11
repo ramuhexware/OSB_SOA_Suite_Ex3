@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<process name="NotificationProcess"
+         targetNamespace="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess"
+         xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:client="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess"
+         xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/LoanOrchestration/types">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess" location="NotificationProcess.wsdl" importType="wsdl"/>
+
+  <partnerLinks>
+    <partnerLink name="notificationprocess_client" partnerLinkType="client:NotificationProcess" myRole="NotificationProcessProvider"/>
+  </partnerLinks>
+
+  <variables>
+    <variable name="inputVar" messageType="client:NotificationRequestMessage"/>
+    <variable name="outputVar" messageType="client:NotificationResponseMessage"/>
+  </variables>
+
+  <sequence name="main">
+    <receive name="receiveInput" partnerLink="notificationprocess_client" portType="client:NotificationProcess" operation="processNotification" variable="inputVar" createInstance="yes"/>
+    
+    <!-- Simulate dispatching message -->
+    <assign name="AssignNotified">
+      <copy>
+        <from>'SUCCESS'</from>
+        <to>$outputVar.payload/ns1:status</to>
+      </copy>
+      <copy>
+        <from>concat('Notification email successfully dispatched to applicant: ', $inputVar.payload/ns1:applicantName, '. Subject: Loan Decision: ', $inputVar.payload/ns1:decision)</from>
+        <to>$outputVar.payload/ns1:message</to>
+      </copy>
+    </assign>
+    
+    <reply name="replyOutput" partnerLink="notificationprocess_client" portType="client:NotificationProcess" operation="processNotification" variable="outputVar"/>
+  </sequence>
+</process>

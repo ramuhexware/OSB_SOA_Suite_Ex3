@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="ValuationProcess"
+                  targetNamespace="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess"
+                  xmlns:tns="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess"
+                  xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+  <wsdl:types>
+    <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:import namespace="http://xmlns.oracle.com/LoanOrchestration/types" schemaLocation="../loan-service-soa/LoanWorkflow.xsd" />
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="ValuationRequestMessage">
+    <wsdl:part name="payload" element="types:ValuationRequest"/>
+  </wsdl:message>
+  <wsdl:message name="ValuationResponseMessage">
+    <wsdl:part name="payload" element="types:ValuationResponse"/>
+  </wsdl:message>
+  <wsdl:message name="RefundRequestMessage">
+    <wsdl:part name="payload" element="types:RefundRequest"/>
+  </wsdl:message>
+  <wsdl:message name="RefundResponseMessage">
+    <wsdl:part name="payload" element="types:RefundResponse"/>
+  </wsdl:message>
+
+  <wsdl:portType name="ValuationProcess">
+    <wsdl:operation name="appraise">
+      <wsdl:input message="tns:ValuationRequestMessage"/>
+      <wsdl:output message="tns:ValuationResponseMessage"/>
+    </wsdl:operation>
+    <wsdl:operation name="refund">
+      <wsdl:input message="tns:RefundRequestMessage"/>
+      <wsdl:output message="tns:RefundResponseMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="ValuationProcessBinding" type="tns:ValuationProcess">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="appraise">
+      <soap:operation soapAction="appraise"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="refund">
+      <soap:operation soapAction="refund"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="valuationprocess_client_ep">
+    <wsdl:port name="ValuationProcess_pt" binding="tns:ValuationProcessBinding">
+      <soap:address location="http://localhost:8083/soap/ValuationProcess"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

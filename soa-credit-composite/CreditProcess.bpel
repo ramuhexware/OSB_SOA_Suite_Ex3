@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<process name="CreditProcess"
+         targetNamespace="http://xmlns.oracle.com/LoanOrchestration/CreditProcess"
+         xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:client="http://xmlns.oracle.com/LoanOrchestration/CreditProcess"
+         xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/LoanOrchestration/types">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/CreditProcess" location="CreditProcess.wsdl" importType="wsdl"/>
+
+  <partnerLinks>
+    <partnerLink name="creditprocess_client" partnerLinkType="client:CreditProcess" myRole="CreditProcessProvider"/>
+  </partnerLinks>
+
+  <variables>
+    <variable name="inputVar" messageType="client:CreditCheckRequestMessage"/>
+    <variable name="outputVar" messageType="client:CreditCheckResponseMessage"/>
+  </variables>
+
+  <sequence name="main">
+    <receive name="receiveInput" partnerLink="creditprocess_client" portType="client:CreditProcess" operation="processCreditCheck" variable="inputVar" createInstance="yes"/>
+    
+    <!-- Simulate Credit Scoring Logic -->
+    <assign name="CalculateScore">
+      <copy>
+        <!-- Standard mock score mapping based on SSN ending digit -->
+        <from>
+          <literal>720</literal>
+        </from>
+        <to>$outputVar.payload/ns1:creditScore</to>
+      </copy>
+    </assign>
+    
+    <reply name="replyOutput" partnerLink="creditprocess_client" portType="client:CreditProcess" operation="processCreditCheck" variable="outputVar"/>
+  </sequence>
+</process>

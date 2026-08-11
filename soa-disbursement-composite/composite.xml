@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<composite name="DisbursementComposite"
+           revision="1.0"
+           label="DisbursementSubService"
+           mode="active"
+           state="on"
+           xmlns="http://xmlns.oracle.com/sca/1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ui="http://xmlns.oracle.com/soa/designer/">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess"
+          location="DisbursementProcess.wsdl" importType="wsdl"/>
+
+  <service name="disbursementprocess_client_ep" ui:wsdlLocation="DisbursementProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess#wsdl.interface(DisbursementProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess#wsdl.endpoint(disbursementprocess_client_ep/DisbursementProcess_pt)"/>
+  </service>
+
+  <property name="productVersion" type="xs:string" many="false">12.2.1.4.0</property>
+
+  <component name="DisbursementProcess" version="2.0">
+    <implementation.bpel src="DisbursementProcess.bpel"/>
+    <componentType>
+      <service name="disbursementprocess_client" ui:wsdlLocation="DisbursementProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess#wsdl.interface(DisbursementProcess)"/>
+      </service>
+    </componentType>
+  </component>
+
+  <wire>
+    <source.uri>disbursementprocess_client_ep</source.uri>
+    <target.uri>DisbursementProcess/disbursementprocess_client</target.uri>
+  </wire>
+
+</composite>

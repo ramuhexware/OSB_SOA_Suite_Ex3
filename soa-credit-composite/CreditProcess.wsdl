@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="CreditProcess"
+                  targetNamespace="http://xmlns.oracle.com/LoanOrchestration/CreditProcess"
+                  xmlns:tns="http://xmlns.oracle.com/LoanOrchestration/CreditProcess"
+                  xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+  <wsdl:types>
+    <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:import namespace="http://xmlns.oracle.com/LoanOrchestration/types" schemaLocation="../loan-service-soa/LoanWorkflow.xsd" />
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="CreditCheckRequestMessage">
+    <wsdl:part name="payload" element="types:CreditScoreRequest"/>
+  </wsdl:message>
+  <wsdl:message name="CreditCheckResponseMessage">
+    <wsdl:part name="payload" element="types:CreditScoreResponse"/>
+  </wsdl:message>
+
+  <wsdl:portType name="CreditProcess">
+    <wsdl:operation name="processCreditCheck">
+      <wsdl:input message="tns:CreditCheckRequestMessage"/>
+      <wsdl:output message="tns:CreditCheckResponseMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="CreditProcessBinding" type="tns:CreditProcess">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="processCreditCheck">
+      <soap:operation soapAction="processCreditCheck"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="creditprocess_client_ep">
+    <wsdl:port name="CreditProcess_pt" binding="tns:CreditProcessBinding">
+      <soap:address location="http://localhost:8082/soap/CreditProcess"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

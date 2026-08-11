@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:pipelineEntry xmlns:con="http://www.bea.com/wli/sb/pipeline/config" 
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                   xmlns:con1="http://www.bea.com/wli/sb/stages/transform/config" 
+                   xmlns:con2="http://www.bea.com/wli/sb/stages/routing/config" 
+                   xmlns:con3="http://www.bea.com/wli/sb/stages/config">
+    <con:coreEntry>
+        <con:description>OSB Message Flow Pipeline for Loan Application Request processing and routing.</con:description>
+    </con:coreEntry>
+    <con:router errorHandler="PipelineErrorHandler">
+        <con:pipeline type="request" name="request-pipeline">
+            <con:stage id="_StageId1" name="ValidationAndTransformation">
+                <con:context>
+                    <con3:userNsDecl prefix="types" namespace="http://xmlns.oracle.com/LoanOrchestration/types"/>
+                </con:context>
+                <con:actions>
+                    <!-- Schema validation action -->
+                    <con1:validate>
+                        <con3:id>_ActionId1</con3:id>
+                        <con1:schemaRef ref="loan-service-soa/LoanWorkflow"/>
+                        <con1:schemaElement>types:LoanApplicationRequest</con1:schemaElement>
+                        <con1:varName>body</con1:varName>
+                        <con1:location>./types:LoanApplicationRequest</con1:location>
+                    </con1:validate>
+                    
+                    <!-- Transformation log/assign using XQuery -->
+                    <con1:assign varName="transformedBody">
+                        <con3:id>_ActionId2</con3:id>
+                        <con1:expr>
+                            <con3:xqueryTransform>
+                                <con3:resource ref="osb-services/TransformRequest"/>
+                                <con3:param name="request">
+                                    <con3:path>$body/types:LoanApplicationRequest</con3:path>
+                                </con3:param>
+                            </con3:xqueryTransform>
+                        </con1:expr>
+                    </con1:assign>
+                </con:actions>
+            </con:pipeline>
+        </con:pipeline>
+        <con:pipeline type="response" name="response-pipeline">
+            <con:stage id="_StageId2" name="FormatResponse">
+                <con:context>
+                    <con3:userNsDecl prefix="types" namespace="http://xmlns.oracle.com/LoanOrchestration/types"/>
+                </con:context>
+                <con:actions>
+                    <con1:log>
+                        <con3:id>_ActionId3</con3:id>
+                        <con1:logLevel>info</con1:logLevel>
+                        <con1:expr>
+                            <con3:path>$body</con3:path>
+                        </con1:expr>
+                        <con1:message>OSB processed loan response payload</con1:message>
+                    </con1:log>
+                </con:actions>
+            </con:stage>
+        </con:pipeline>
+        
+        <!-- Pipeline Error Handler -->
+        <con:pipeline type="error" name="PipelineErrorHandler">
+            <con:stage id="_StageId3" name="HandlePipelineFault">
+                <con:actions>
+                    <con1:replace varName="body" contents-only="true">
+                        <con3:id>_ActionId4</con3:id>
+                        <con1:location>
+                            <con3:xpathText>.</con3:xpathText>
+                        </con1:location>
+                        <con1:expr>
+                            <con3:codeText><![CDATA[
+                            <soap-env:Fault xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
+                                <faultcode>soap-env:Server</faultcode>
+                                <faultstring>Oracle Service Bus Pipeline Exception: System transformation or connection failure.</faultstring>
+                                <detail>
+                                    <types:FaultDetail xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types">
+                                        <types:errorCode>OSB-500</types:errorCode>
+                                        <types:errorMessage>Details: {$fault/ctx:details/text()}</types:errorMessage>
+                                        <types:timestamp>{fn:current-dateTime()}</types:timestamp>
+                                    </types:FaultDetail>
+                                </detail>
+                            </soap-env:Fault>
+                            ]]></con3:codeText>
+                        </con1:expr>
+                    </con1:replace>
+                    <con3:reply isError="true"/>
+                </con:actions>
+            </con:pipeline>
+        </con:pipeline>
+        
+        <con:flow>
+            <con:pipeline-node name="PipelineNode">
+                <con:request>request-pipeline</con:request>
+                <con:response>response-pipeline</con:response>
+            </con:pipeline-node>
+            <con:route-node name="RouteToBPEL">
+                <con:context/>
+                <con:actions>
+                    <con2:route>
+                        <con3:id>_ActionId5</con3:id>
+                        <con2:service ref="loan-service-soa/loanapproval_client_ep" xsi:type="con:ServiceRef"/>
+                        <con2:operation>initiateLoan</con2:operation>
+                        <con2:outboundTransform/>
+                        <con2:responseTransform/>
+                    </con2:route>
+                </con:actions>
+            </con:route-node>
+        </con:flow>
+    </con:router>
+</con:pipelineEntry>

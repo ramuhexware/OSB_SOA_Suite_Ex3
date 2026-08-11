@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema targetNamespace="http://xmlns.oracle.com/LoanOrchestration/types"
+           xmlns:tns="http://xmlns.oracle.com/LoanOrchestration/types"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+  <!-- Core Loan Elements -->
+  <xs:element name="LoanApplicationRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="applicantName" type="xs:string"/>
+        <xs:element name="ssn" type="xs:string"/>
+        <xs:element name="loanAmount" type="xs:double"/>
+        <xs:element name="monthlyIncome" type="xs:double"/>
+        <xs:element name="propertyAddress" type="xs:string"/>
+        <xs:element name="propertyValue" type="xs:double"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="LoanApplicationResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="loanId" type="xs:long"/>
+        <xs:element name="status" type="xs:string"/>
+        <xs:element name="decision" type="xs:string"/>
+        <xs:element name="decisionNotes" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Credit Service Elements -->
+  <xs:element name="CreditScoreRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="ssn" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="CreditScoreResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="creditScore" type="xs:int"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Property Valuation Elements -->
+  <xs:element name="ValuationRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="propertyAddress" type="xs:string"/>
+        <xs:element name="estimatedValue" type="xs:double"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ValuationResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="appraisedValue" type="xs:double"/>
+        <xs:element name="status" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="RefundRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="propertyAddress" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="RefundResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="status" type="xs:string"/>
+        <xs:element name="message" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Underwriting Elements -->
+  <xs:element name="UnderwritingRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="creditScore" type="xs:int"/>
+        <xs:element name="loanAmount" type="xs:double"/>
+        <xs:element name="monthlyIncome" type="xs:double"/>
+        <xs:element name="propertyValue" type="xs:double"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="UnderwritingResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="decision" type="xs:string"/>
+        <xs:element name="notes" type="xs:string"/>
+        <xs:element name="dti" type="xs:double"/>
+        <xs:element name="ltv" type="xs:double"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Disbursement Elements -->
+  <xs:element name="DisbursementRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="loanId" type="xs:long"/>
+        <xs:element name="loanAmount" type="xs:double"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="DisbursementResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="status" type="xs:string"/>
+        <xs:element name="message" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Notification Elements -->
+  <xs:element name="NotificationRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="loanId" type="xs:long"/>
+        <xs:element name="applicantName" type="xs:string"/>
+        <xs:element name="decision" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="NotificationResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="status" type="xs:string"/>
+        <xs:element name="message" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Fault Specification -->
+  <xs:element name="FaultDetail">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="errorCode" type="xs:string"/>
+        <xs:element name="errorMessage" type="xs:string"/>
+        <xs:element name="timestamp" type="xs:dateTime"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

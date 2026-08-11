@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<composite name="NotificationComposite"
+           revision="1.0"
+           label="NotificationSubService"
+           mode="active"
+           state="on"
+           xmlns="http://xmlns.oracle.com/sca/1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ui="http://xmlns.oracle.com/soa/designer/">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess"
+          location="NotificationProcess.wsdl" importType="wsdl"/>
+
+  <service name="notificationprocess_client_ep" ui:wsdlLocation="NotificationProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess#wsdl.interface(NotificationProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess#wsdl.endpoint(notificationprocess_client_ep/NotificationProcess_pt)"/>
+  </service>
+
+  <property name="productVersion" type="xs:string" many="false">12.2.1.4.0</property>
+
+  <component name="NotificationProcess" version="2.0">
+    <implementation.bpel src="NotificationProcess.bpel"/>
+    <componentType>
+      <service name="notificationprocess_client" ui:wsdlLocation="NotificationProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess#wsdl.interface(NotificationProcess)"/>
+      </service>
+    </componentType>
+  </component>
+
+  <wire>
+    <source.uri>notificationprocess_client_ep</source.uri>
+    <target.uri>NotificationProcess/notificationprocess_client</target.uri>
+  </wire>
+
+</composite>

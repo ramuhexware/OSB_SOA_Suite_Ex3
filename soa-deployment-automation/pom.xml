@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.oracle.soa.deployment</groupId>
+    <artifactId>soa-composite-deployer</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <name>Oracle SOA Suite Deployment Automation</name>
+    <description>Maven Automation for Packaging SAR archives and deploying to WebLogic Server</description>
+
+    <properties>
+        <!-- WebLogic / SOA Server connection variables -->
+        <oracle.home>C:/Oracle/Middleware/Oracle_Home</oracle.home>
+        <soa.serverURL>http://localhost:7001</soa.serverURL>
+        <soa.user>weblogic</soa.user>
+        <soa.password>Welcome1</soa.password>
+        <soa.partition>default</soa.partition>
+        <composite.name>LoanServiceSOAEngine</composite.name>
+        <composite.revision>1.0</composite.revision>
+        <composite.dir>../loan-service-soa</composite.dir>
+    </properties>
+
+    <build>
+        <plugins>
+            <!-- Official Oracle SOA Maven plugin for compiling and packaging BPEL composites -->
+            <plugin>
+                <groupId>com.oracle.soa.plugins</groupId>
+                <artifactId>oracle-soa-maven-plugin</artifactId>
+                <version>12.2.1.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <compositeName>${composite.name}</compositeName>
+                    <compositeRevision>${composite.revision}</compositeRevision>
+                    <compositeDir>${composite.dir}</compositeDir>
+                    <serverUrl>${soa.serverURL}</serverUrl>
+                    <user>${soa.user}</user>
+                    <password>${soa.password}</password>
+                    <partition>${soa.partition}</partition>
+                    <overwrite>true</overwrite>
+                    <forceDefault>true</forceDefault>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>compile-and-package-sar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>sar</goal> <!-- Packages composite into a .sar archive -->
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>deploy-to-weblogic</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>deploy</goal> <!-- Deploys the packaged .sar to soa-infra -->
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

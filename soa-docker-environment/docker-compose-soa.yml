@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Oracle Database container (essential repository backend for SOA Infrastructure)
+  soa-database:
+    image: container-registry.oracle.com/database/express:21.3.0-xe
+    container_name: soa-database
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_PASSWORD=Welcome1
+    volumes:
+      - soadb_data:/opt/oracle/oradata
+    networks:
+      - soa-network
+
+  # Oracle SOA Suite Managed Container
+  oracle-soa-suite:
+    image: container-registry.oracle.com/middleware/soa:12.2.1.4.0
+    container_name: oracle-soa-suite
+    ports:
+      - "7001:7001" # WebLogic Admin Server Console
+      - "8001:8001" # Managed SOA Server (soa-infra & BPEL engine)
+    environment:
+      - CONNECTION_STRING=soa-database:1521/XE
+      - DB_USER=sys
+      - DB_PASSWORD=Welcome1
+      - DB_ROLE=sysdba
+      - RCU_PREFIX=DEV
+      - DOMAIN_NAME=soa_domain
+      - ADMIN_USER=weblogic
+      - ADMIN_PASSWORD=Welcome1
+    depends_on:
+      - soa-database
+    volumes:
+      - soashare_volume:/u01/oracle/user_projects
+    networks:
+      - soa-network
+
+volumes:
+  soadb_data:
+    driver: local
+  soashare_volume:
+    driver: local
+
+networks:
+  soa-network:
+    driver: bridge

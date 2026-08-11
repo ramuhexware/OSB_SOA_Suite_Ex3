@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ser:proxyServiceEntry xmlns:ser="http://www.bea.com/wli/sb/services" 
+                       xmlns:con="http://www.bea.com/wli/sb/services/security/config" 
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                       xmlns:oper="http://xmlns.oracle.com/servicebus/proxy/operations" 
+                       xmlns:tran="http://www.bea.com/wli/sb/transports" 
+                       xmlns:env="http://www.bea.com/wli/sb/transports/env">
+    <ser:coreEntry>
+        <ser:description>Proxy service exposing the Loan Application endpoint virtualized by Oracle Service Bus.</ser:description>
+        <ser:security>
+            <con:wssPolicyPolicyReference>
+                <con:policyURI con:id="oracle/wss_username_token_service_policy"/>
+            </con:wssPolicyPolicyReference>
+        </ser:security>
+        <ser:binding type="SOAP" xsi:type="con:SoapBindingType" xmlns:con="http://www.bea.com/wli/sb/services/bindings/config">
+            <con:wsdl ref="loan-service-soa/LoanApprovalProcess"/>
+            <con:port>
+                <con:name>LoanApprovalProcess_pt</con:name>
+                <con:namespace>http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess</con:namespace>
+            </con:port>
+            <con:selector type="SOAP body"/>
+        </ser:binding>
+        <oper:operations enabled="true"/>
+        <ser:ws-policy>
+            <ser:binding-policy>
+                <ser:predefined-policy-ref ref="oracle/wss_username_token_service_policy"/>
+            </ser:binding-policy>
+        </ser:ws-policy>
+        <ser:invoke ref="osb-services/LoanServicePipeline" xsi:type="con:PipelineRef" xmlns:con="http://www.bea.com/wli/sb/pipeline/config"/>
+    </ser:coreEntry>
+    <ser:endpointConfig>
+        <tran:provider-id>http</tran:provider-id>
+        <tran:inbound>true</tran:inbound>
+        <tran:URI>
+            <env:value>/sb/loan/LoanServiceProxy</env:value>
+        </tran:URI>
+        <tran:inbound-properties/>
+        <tran:provider-specific xsi:type="http:HttpEndPointConfiguration" xmlns:http="http://www.bea.com/wli/sb/transports/http">
+            <http:inbound-properties/>
+            <http:compression>
+                <http:compression-support>false</http:compression-support>
+            </http:compression>
+        </tran:provider-specific>
+    </ser:endpointConfig>
+</ser:proxyServiceEntry>

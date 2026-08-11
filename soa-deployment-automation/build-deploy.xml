@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     Ant Script for Oracle SOA Suite Composite Packaging & Deployment
+     ====================================================================== -->
+<project name="OracleSOADeployer" default="deploy-all">
+
+    <!-- Define properties -->
+    <property name="oracle.home" value="C:/Oracle/Middleware/Oracle_Home"/>
+    <property name="server.url" value="http://localhost:7001"/>
+    <property name="username" value="weblogic"/>
+    <property name="password" value="Welcome1"/>
+    <property name="partition" value="default"/>
+    
+    <!-- Paths to projects -->
+    <property name="composite.dir" value="../loan-service-soa"/>
+    <property name="composite.name" value="LoanServiceSOAEngine"/>
+    <property name="revision" value="1.0"/>
+    <property name="sar.file" value="${composite.dir}/deploy/sca_${composite.name}_rev${revision}.sar"/>
+
+    <!-- Load the official Oracle Ant task definitions -->
+    <import file="${oracle.home}/soa/bin/ant-sca-compile.xml"/>
+    <import file="${oracle.home}/soa/bin/ant-sca-deploy.xml"/>
+
+    <!-- Compile target -->
+    <target name="compile-composite">
+        <echo message="Compiling BPEL Composite in: ${composite.dir}"/>
+        <antcall target="scac">
+            <param name="scac.input" value="${composite.dir}/composite.xml"/>
+            <param name="scac.output" value="${composite.dir}/out.xml"/>
+        </antcall>
+    </target>
+
+    <!-- Package target -->
+    <target name="package-sar" depends="compile-composite">
+        <echo message="Packaging BPEL Composite into SAR archive: ${sar.file}"/>
+        <antcall target="package">
+            <param name="compositeDir" value="${composite.dir}"/>
+            <param name="compositeName" value="${composite.name}"/>
+            <param name="revision" value="${revision}"/>
+        </antcall>
+    </target>
+
+    <!-- Deploy target -->
+    <target name="deploy-composite" depends="package-sar">
+        <echo message="Deploying SAR to WebLogic server at: ${server.url}"/>
+        <antcall target="deploy">
+            <param name="serverURL" value="${server.url}"/>
+            <param name="user" value="${username}"/>
+            <param name="password" value="${password}"/>
+            <param name="overwrite" value="true"/>
+            <param name="forceDefault" value="true"/>
+            <param name="sarLocation" value="${sar.file}"/>
+            <param name="partition" value="${partition}"/>
+        </antcall>
+    </target>
+
+    <target name="deploy-all" depends="deploy-composite">
+        <echo message="Orchestration composite deployed successfully."/>
+    </target>
+</project>

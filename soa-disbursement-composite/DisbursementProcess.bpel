@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<process name="DisbursementProcess"
+         targetNamespace="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess"
+         xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:client="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess"
+         xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/LoanOrchestration/types">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess" location="DisbursementProcess.wsdl" importType="wsdl"/>
+
+  <partnerLinks>
+    <partnerLink name="disbursementprocess_client" partnerLinkType="client:DisbursementProcess" myRole="DisbursementProcessProvider"/>
+  </partnerLinks>
+
+  <variables>
+    <variable name="inputVar" messageType="client:DisbursementRequestMessage"/>
+    <variable name="outputVar" messageType="client:DisbursementResponseMessage"/>
+  </variables>
+
+  <sequence name="main">
+    <receive name="receiveInput" partnerLink="disbursementprocess_client" portType="client:DisbursementProcess" operation="processDisbursement" variable="inputVar" createInstance="yes"/>
+    
+    <!-- Ledger posting action -->
+    <assign name="AssignDisbursed">
+      <copy>
+        <from>'SUCCESS'</from>
+        <to>$outputVar.payload/ns1:status</to>
+      </copy>
+      <copy>
+        <from>concat('Funds posted to account. Amount disbursed: $', string($inputVar.payload/ns1:loanAmount))</from>
+        <to>$outputVar.payload/ns1:message</to>
+      </copy>
+    </assign>
+    
+    <reply name="replyOutput" partnerLink="disbursementprocess_client" portType="client:DisbursementProcess" operation="processDisbursement" variable="outputVar"/>
+  </sequence>
+</process>

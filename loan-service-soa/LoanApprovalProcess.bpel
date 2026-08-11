@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<process name="LoanApprovalProcess"
+         targetNamespace="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess"
+         xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:client="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess"
+         xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+         xmlns:credit="http://xmlns.oracle.com/LoanOrchestration/CreditProcess"
+         xmlns:val="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess"
+         xmlns:under="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess"
+         xmlns:disb="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess"
+         xmlns:notif="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/LoanOrchestration/types">
+
+  <!-- Import Partner WSDLs -->
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess" location="LoanApprovalProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/CreditProcess" location="../soa-credit-composite/CreditProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess" location="../soa-valuation-composite/ValuationProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess" location="../soa-underwriting-composite/UnderwritingProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess" location="../soa-disbursement-composite/DisbursementProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess" location="../soa-notification-composite/NotificationProcess.wsdl" importType="wsdl"/>
+
+  <!-- Partner Links -->
+  <partnerLinks>
+    <partnerLink name="loanapproval_client" partnerLinkType="client:LoanApprovalProcess" myRole="LoanApprovalProcessProvider"/>
+    <partnerLink name="CreditProcessRef" partnerRole="CreditProcessProvider"/>
+    <partnerLink name="ValuationProcessRef" partnerRole="ValuationServiceProvider"/>
+    <partnerLink name="UnderwritingProcessRef" partnerRole="UnderwritingServiceProvider"/>
+    <partnerLink name="DisbursementProcessRef" partnerRole="DisbursementServiceProvider"/>
+    <partnerLink name="NotificationProcessRef" partnerRole="NotificationServiceProvider"/>
+  </partnerLinks>
+
+  <!-- Variables -->
+  <variables>
+    <!-- Entry / Exit Payloads -->
+    <variable name="inputVar" messageType="client:LoanApprovalRequestMessage"/>
+    <variable name="outputVar" messageType="client:LoanApprovalResponseMessage"/>
+    <variable name="sanctionFaultVar" messageType="client:SanctionListFaultMessage"/>
+    
+    <!-- Downstream BPEL request/responses -->
+    <variable name="creditRequest" messageType="credit:CreditCheckRequestMessage"/>
+    <variable name="creditResponse" messageType="credit:CreditCheckResponseMessage"/>
+    
+    <variable name="valuationRequest" messageType="val:ValuationRequestMessage"/>
+    <variable name="valuationResponse" messageType="val:ValuationResponseMessage"/>
+    <variable name="refundRequest" messageType="val:RefundRequestMessage"/>
+    <variable name="refundResponse" messageType="val:RefundResponseMessage"/>
+    
+    <variable name="underwritingRequest" messageType="under:UnderwritingRequestMessage"/>
+    <variable name="underwritingResponse" messageType="under:UnderwritingResponseMessage"/>
+    
+    <variable name="disbursementRequest" messageType="disb:DisbursementRequestMessage"/>
+    <variable name="disbursementResponse" messageType="disb:DisbursementResponseMessage"/>
+    
+    <variable name="notificationRequest" messageType="notif:NotificationRequestMessage"/>
+    <variable name="notificationResponse" messageType="notif:NotificationResponseMessage"/>
+  </variables>
+
+  <!-- Global Fault Handlers -->
+  <faultHandlers>
+    
+    <!-- Identity Watchlist Match (Trigger saga compensation for appraisal refunds) -->
+    <catch faultName="ns1:FraudAlertFault">
+      <sequence name="FraudCompensationSequence">
+        
+        <!-- Run compensation handler on ValuationScope -->
+        <compensate target="ValuationScope"/>
+        
+        <assign name="AssignFraudRejection">
+          <copy>
+            <from>number(0)</from>
+            <to>$outputVar.payload/ns1:loanId</to>
+          </copy>
+          <copy>
+            <from>'REJECTED'</from>
+            <to>$outputVar.payload/ns1:status</to>
+          </copy>
+          <copy>
+            <from>'REJECTED'</from>
+            <to>$outputVar.payload/ns1:decision</to>
+          </copy>
+          <copy>
+            <from>'Saga compensated: Fraud watchlist match triggered valuation fee refund.'</from>
+            <to>$outputVar.payload/ns1:decisionNotes</to>
+          </copy>
+        </assign>
+        <reply name="ReplyFraudRejection" partnerLink="loanapproval_client" portType="client:LoanApprovalProcess" operation="initiateLoan" variable="outputVar"/>
+      </sequence>
+    </catch>
+
+    <!-- Catch Credit check service down error -->
+    <catch faultName="ns1:CreditServiceDownFault">
+      <sequence name="CreditDownSequence">
+        <assign name="AssignCreditDownRejection">
+          <copy>
+            <from>number(0)</from>
+            <to>$outputVar.payload/ns1:loanId</to>
+          </copy>
+          <copy>
+            <from>'REJECTED'</from>
+            <to>$outputVar.payload/ns1:status</to>
+          </copy>
+          <copy>
+            <from>'REJECTED'</from>
+            <to>$outputVar.payload/ns1:decision</to>
+          </copy>
+          <copy>
+            <from>'System fault: Credit check service is offline. Please try again later.'</from>
+            <to>$outputVar.payload/ns1:decisionNotes</to>
+          </copy>
+        </assign>
+        <reply name="ReplyCreditDownRejection" partnerLink="loanapproval_client" portType="client:LoanApprovalProcess" operation="initiateLoan" variable="outputVar"/>
+      </sequence>
+    </catch>
+
+  </faultHandlers>
+
+  <!-- Complete Orchestration Workflow -->
+  <sequence name="main">
+    
+    <!-- 1. Receive client request -->
+    <receive name="ReceiveRequest" partnerLink="loanapproval_client" portType="client:LoanApprovalProcess" operation="initiateLoan" variable="inputVar" createInstance="yes"/>
+
+    <!-- Sanction Watchlist Exit (Immediate check) -->
+    <if name="CheckSanctionList">
+      <condition>contains(lower-case($inputVar.payload/ns1:applicantName), 'voldemort') or ($inputVar.payload/ns1:ssn = '000-00-6666')</condition>
+      <sequence name="SanctionFaultSequence">
+        <assign name="AssignSanctionFault">
+          <copy>
+            <from>'OFAC-403'</from>
+            <to>$sanctionFaultVar.fault/ns1:errorCode</to>
+          </copy>
+          <copy>
+            <from>'Security Exit: Applicant matches Office of Foreign Assets Control sanction list.'</from>
+            <to>$sanctionFaultVar.fault/ns1:errorMessage</to>
+          </copy>
+          <copy>
+            <from>xp20:current-dateTime()</from>
+            <to>$sanctionFaultVar.fault/ns1:timestamp</to>
+          </copy>
+        </assign>
+        <reply name="ReplySanctionFault" partnerLink="loanapproval_client" portType="client:LoanApprovalProcess" operation="initiateLoan" variable="sanctionFaultVar" faultName="client:sanctionFault"/>
+        <exit name="ExitSanctionBlocked"/>
+      </sequence>
+    </if>
+
+    <!-- 2. Invoke Standalone Credit Sub-composite -->
+    <scope name="CreditScope">
+      <sequence name="CreditSeq">
+        <assign name="AssignCredit">
+          <copy>
+            <from>$inputVar.payload/ns1:ssn</from>
+            <to>$creditRequest.payload/ns1:ssn</to>
+          </copy>
+        </assign>
+        <invoke name="InvokeCredit" partnerLink="CreditProcessRef" portType="credit:CreditProcess" operation="processCreditCheck" inputVariable="creditRequest" outputVariable="creditResponse"/>
+      </sequence>
+    </scope>
+
+    <!-- 3. Invoke Standalone Valuation Sub-composite (with registered saga compensation) -->
+    <scope name="ValuationScope">
+      <compensationHandler>
+        <sequence name="RefundSeq">
+          <assign name="AssignRefund">
+            <copy>
+              <from>$inputVar.payload/ns1:propertyAddress</from>
+              <to>$refundRequest.payload/ns1:propertyAddress</to>
+            </copy>
+          </assign>
+          <invoke name="InvokeValuationRefund" partnerLink="ValuationProcessRef" portType="val:ValuationProcess" operation="refund" inputVariable="refundRequest" outputVariable="refundResponse"/>
+        </sequence>
+      </compensationHandler>
+      
+      <sequence name="ValuationSeq">
+        <assign name="AssignValuation">
+          <copy>
+            <from>$inputVar.payload/ns1:propertyAddress</from>
+            <to>$valuationRequest.payload/ns1:propertyAddress</to>
+          </copy>
+          <copy>
+            <from>$inputVar.payload/ns1:propertyValue</from>
+            <to>$valuationRequest.payload/ns1:estimatedValue</to>
+          </copy>
+        </assign>
+        <invoke name="InvokeValuation" partnerLink="ValuationProcessRef" portType="val:ValuationProcess" operation="appraise" inputVariable="valuationRequest" outputVariable="valuationResponse"/>
+      </sequence>
+    </scope>
+
+    <!-- Fraud Watchlist Check (Simulating Watchlist fault throwing) -->
+    <if name="WatchlistCheck">
+      <condition>ends-with(translate($inputVar.payload/ns1:ssn, '-', ''), '9999')</condition>
+      <throw name="ThrowFraudAlert" faultName="ns1:FraudAlertFault"/>
+    </if>
+
+    <!-- 4. Invoke Standalone Underwriting Sub-composite -->
+    <assign name="AssignUnderwriting">
+      <copy>
+        <from>$creditResponse.payload/ns1:creditScore</from>
+        <to>$underwritingRequest.payload/ns1:creditScore</to>
+      </copy>
+      <copy>
+        <from>$inputVar.payload/ns1:loanAmount</from>
+        <to>$underwritingRequest.payload/ns1:loanAmount</to>
+      </copy>
+      <copy>
+        <from>$inputVar.payload/ns1:monthlyIncome</from>
+        <to>$underwritingRequest.payload/ns1:monthlyIncome</to>
+      </copy>
+      <copy>
+        <from>$valuationResponse.payload/ns1:appraisedValue</from>
+        <to>$underwritingRequest.payload/ns1:propertyValue</to>
+      </copy>
+    </assign>
+    
+    <invoke name="InvokeUnderwriting" partnerLink="UnderwritingProcessRef" portType="under:UnderwritingProcess" operation="processUnderwriting" inputVariable="underwritingRequest" outputVariable="underwritingResponse"/>
+
+    <!-- 5. Decision Routing -->
+    <if name="RouteDecision">
+      <!-- Auto Approved -->
+      <condition>$underwritingResponse.payload/ns1:decision = 'AUTO_APPROVED'</condition>
+      <sequence name="ApprovedSequence">
+        
+        <!-- Call standalone Disbursement composite -->
+        <assign name="AssignDisbursement">
+          <copy>
+            <from>number(1003)</from>
+            <to>$disbursementRequest.payload/ns1:loanId</to>
+          </copy>
+          <copy>
+            <from>$inputVar.payload/ns1:loanAmount</from>
+            <to>$disbursementRequest.payload/ns1:loanAmount</to>
+          </copy>
+        </assign>
+        <invoke name="InvokeDisbursement" partnerLink="DisbursementProcessRef" portType="disb:DisbursementProcess" operation="processDisbursement" inputVariable="disbursementRequest" outputVariable="disbursementResponse"/>
+
+        <!-- Call standalone Notification composite -->
+        <assign name="AssignNotification">
+          <copy>
+            <from>number(1003)</from>
+            <to>$notificationRequest.payload/ns1:loanId</to>
+          </copy>
+          <copy>
+            <from>$inputVar.payload/ns1:applicantName</from>
+            <to>$notificationRequest.payload/ns1:applicantName</to>
+          </copy>
+          <copy>
+            <from>'APPROVED'</from>
+            <to>$notificationRequest.payload/ns1:decision</to>
+          </copy>
+        </assign>
+        <invoke name="InvokeNotification" partnerLink="NotificationProcessRef" portType="notif:NotificationProcess" operation="processNotification" inputVariable="notificationRequest" outputVariable="notificationResponse"/>
+
+        <assign name="AssignApprovedResponse">
+          <copy>
+            <from>number(1003)</from>
+            <to>$outputVar.payload/ns1:loanId</to>
+          </copy>
+          <copy>
+            <from>'DISBURSED'</from>
+            <to>$outputVar.payload/ns1:status</to>
+          </copy>
+          <copy>
+            <from>'APPROVED'</from>
+            <to>$outputVar.payload/ns1:decision</to>
+          </copy>
+          <copy>
+            <from>$underwritingResponse.payload/ns1:notes</from>
+            <to>$outputVar.payload/ns1:decisionNotes</to>
+          </copy>
+        </assign>
+      </sequence>
+
+      <!-- Auto Rejected -->
+      <bpel:elseif>
+        <bpel:condition>$underwritingResponse.payload/ns1:decision = 'AUTO_REJECTED'</bpel:condition>
+        <sequence name="RejectedSequence">
+          <assign name="AssignNotificationReject">
+            <copy>
+              <from>number(1003)</from>
+              <to>$notificationRequest.payload/ns1:loanId</to>
+            </copy>
+            <copy>
+              <from>$inputVar.payload/ns1:applicantName</from>
+              <to>$notificationRequest.payload/ns1:applicantName</to>
+            </copy>
+            <copy>
+              <from>'REJECTED'</from>
+              <to>$notificationRequest.payload/ns1:decision</to>
+            </copy>
+          </assign>
+          <invoke name="InvokeNotificationReject" partnerLink="NotificationProcessRef" portType="notif:NotificationProcess" operation="processNotification" inputVariable="notificationRequest" outputVariable="notificationResponse"/>
+
+          <assign name="AssignRejectedResponse">
+            <copy>
+              <from>number(1003)</from>
+              <to>$outputVar.payload/ns1:loanId</to>
+            </copy>
+            <copy>
+              <from>'REJECTED'</from>
+              <to>$outputVar.payload/ns1:status</to>
+            </copy>
+            <copy>
+              <from>'REJECTED'</from>
+              <to>$outputVar.payload/ns1:decision</to>
+            </copy>
+            <copy>
+              <from>$underwritingResponse.payload/ns1:notes</from>
+              <to>$outputVar.payload/ns1:decisionNotes</to>
+            </copy>
+          </assign>
+        </sequence>
+      </bpel:elseif>
+
+      <!-- Manual Underwriting Review (Human Workflow queue) -->
+      <bpel:else>
+        <sequence name="ManualReviewHumanTask">
+          <assign name="AssignManualResponse">
+            <copy>
+              <from>number(1003)</from>
+              <to>$outputVar.payload/ns1:loanId</to>
+            </copy>
+            <copy>
+              <from>'PENDING_MANUAL_REVIEW'</from>
+              <to>$outputVar.payload/ns1:status</to>
+            </copy>
+            <copy>
+              <from>'PENDING'</from>
+              <to>$outputVar.payload/ns1:decision</to>
+            </copy>
+            <copy>
+              <from>$underwritingResponse.payload/ns1:notes</from>
+              <to>$outputVar.payload/ns1:decisionNotes</to>
+            </copy>
+          </assign>
+        </sequence>
+      </bpel:else>
+    </if>
+
+    <!-- 6. Reply response back to client -->
+    <reply name="ReplyClient" partnerLink="loanapproval_client" portType="client:LoanApprovalProcess" operation="initiateLoan" variable="outputVar"/>
+
+  </sequence>
+</process>

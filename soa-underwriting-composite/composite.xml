@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<composite name="UnderwritingComposite"
+           revision="1.0"
+           label="UnderwritingSubService"
+           mode="active"
+           state="on"
+           xmlns="http://xmlns.oracle.com/sca/1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ui="http://xmlns.oracle.com/soa/designer/">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess"
+          location="UnderwritingProcess.wsdl" importType="wsdl"/>
+
+  <service name="underwritingprocess_client_ep" ui:wsdlLocation="UnderwritingProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess#wsdl.interface(UnderwritingProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess#wsdl.endpoint(underwritingprocess_client_ep/UnderwritingProcess_pt)"/>
+  </service>
+
+  <property name="productVersion" type="xs:string" many="false">12.2.1.4.0</property>
+
+  <component name="UnderwritingProcess" version="2.0">
+    <implementation.bpel src="UnderwritingProcess.bpel"/>
+    <componentType>
+      <service name="underwritingprocess_client" ui:wsdlLocation="UnderwritingProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess#wsdl.interface(UnderwritingProcess)"/>
+      </service>
+    </componentType>
+  </component>
+
+  <wire>
+    <source.uri>underwritingprocess_client_ep</source.uri>
+    <target.uri>UnderwritingProcess/underwritingprocess_client</target.uri>
+  </wire>
+
+</composite>

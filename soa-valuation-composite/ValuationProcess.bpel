@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<process name="ValuationProcess"
+         targetNamespace="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess"
+         xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:client="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess"
+         xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/LoanOrchestration/types">
+
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess" location="ValuationProcess.wsdl" importType="wsdl"/>
+
+  <partnerLinks>
+    <partnerLink name="valuationprocess_client" partnerLinkType="client:ValuationProcess" myRole="ValuationProcessProvider"/>
+  </partnerLinks>
+
+  <variables>
+    <!-- Pick-based variables -->
+    <variable name="appraiseInput" messageType="client:ValuationRequestMessage"/>
+    <variable name="appraiseOutput" messageType="client:ValuationResponseMessage"/>
+    <variable name="refundInput" messageType="client:RefundRequestMessage"/>
+    <variable name="refundOutput" messageType="client:RefundResponseMessage"/>
+  </variables>
+
+  <!-- Pick activity to handle multiple operations in a single BPEL instance -->
+  <pick name="PickOperation" createInstance="yes">
+    
+    <!-- Branch for Appraise Operation -->
+    <onMessage partnerLink="valuationprocess_client" portType="client:ValuationProcess" operation="appraise" variable="appraiseInput">
+      <sequence name="AppraiseSequence">
+        <assign name="AssignAppraisedValue">
+          <copy>
+            <!-- Return appraised value matches estimate -->
+            <from>$appraiseInput.payload/ns1:estimatedValue</from>
+            <to>$appraiseOutput.payload/ns1:appraisedValue</to>
+          </copy>
+          <copy>
+            <from>'APPRAISED'</from>
+            <to>$appraiseOutput.payload/ns1:status</to>
+          </copy>
+        </assign>
+        <reply name="replyAppraise" partnerLink="valuationprocess_client" portType="client:ValuationProcess" operation="appraise" variable="appraiseOutput"/>
+      </sequence>
+    </onMessage>
+
+    <!-- Branch for Compensation Refund Operation -->
+    <onMessage partnerLink="valuationprocess_client" portType="client:ValuationProcess" operation="refund" variable="refundInput">
+      <sequence name="RefundSequence">
+        <assign name="AssignRefundStatus">
+          <copy>
+            <from>'REFUNDED'</from>
+            <to>$refundOutput.payload/ns1:status</to>
+          </copy>
+          <copy>
+            <from>concat('Appraisal fee refunded for address: ', $refundInput.payload/ns1:propertyAddress)</from>
+            <to>$refundOutput.payload/ns1:message</to>
+          </copy>
+        </assign>
+        <reply name="replyRefund" partnerLink="valuationprocess_client" portType="client:ValuationProcess" operation="refund" variable="refundOutput"/>
+      </sequence>
+    </onMessage>
+
+  </pick>
+
+</process>

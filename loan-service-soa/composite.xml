@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<composite name="LoanServiceSOAEngine"
+           revision="1.0"
+           label="LoanOrchestrationMasterEngine"
+           mode="active"
+           state="on"
+           xmlns="http://xmlns.oracle.com/sca/1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ui="http://xmlns.oracle.com/soa/designer/">
+
+  <!-- Imports pointing to standalone sub-composites -->
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess"
+          location="LoanApprovalProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/CreditProcess"
+          location="../soa-credit-composite/CreditProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess"
+          location="../soa-valuation-composite/ValuationProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess"
+          location="../soa-underwriting-composite/UnderwritingProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess"
+          location="../soa-disbursement-composite/DisbursementProcess.wsdl" importType="wsdl"/>
+  <import namespace="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess"
+          location="../soa-notification-composite/NotificationProcess.wsdl" importType="wsdl"/>
+
+  <!-- Client-facing Entry Point Proxy -->
+  <service name="loanapproval_client_ep" ui:wsdlLocation="LoanApprovalProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess#wsdl.interface(LoanApprovalProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess#wsdl.endpoint(loanapproval_client_ep/LoanApprovalProcess_pt)">
+      <property name="weblogic.wsee.wsat.transaction.flowOption" type="xs:string" many="false">NEVER</property>
+    </binding.ws>
+  </service>
+
+  <property name="productVersion" type="xs:string" many="false">12.2.1.4.0</property>
+
+  <!-- BPEL Orchestrator Component -->
+  <component name="LoanApprovalProcess" version="2.0">
+    <implementation.bpel src="LoanApprovalProcess.bpel"/>
+    <componentType>
+      <service name="loanapproval_client" ui:wsdlLocation="LoanApprovalProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess#wsdl.interface(LoanApprovalProcess)"/>
+      </service>
+      <reference name="CreditProcessRef" ui:wsdlLocation="../soa-credit-composite/CreditProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/CreditProcess#wsdl.interface(CreditProcess)"/>
+      </reference>
+      <reference name="ValuationProcessRef" ui:wsdlLocation="../soa-valuation-composite/ValuationProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess#wsdl.interface(ValuationProcess)"/>
+      </reference>
+      <reference name="UnderwritingProcessRef" ui:wsdlLocation="../soa-underwriting-composite/UnderwritingProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess#wsdl.interface(UnderwritingProcess)"/>
+      </reference>
+      <reference name="DisbursementProcessRef" ui:wsdlLocation="../soa-disbursement-composite/DisbursementProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess#wsdl.interface(DisbursementProcess)"/>
+      </reference>
+      <reference name="NotificationProcessRef" ui:wsdlLocation="../soa-notification-composite/NotificationProcess.wsdl">
+        <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess#wsdl.interface(NotificationProcess)"/>
+      </reference>
+    </componentType>
+    <property name="bpel.config.transaction" type="xs:string" many="false">required</property>
+  </component>
+
+  <!-- References pointing to the external deployment endpoints of the sub-composites -->
+  <reference name="CreditProcessRef" ui:wsdlLocation="../soa-credit-composite/CreditProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/CreditProcess#wsdl.interface(CreditProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/CreditProcess#wsdl.endpoint(creditprocess_client_ep/CreditProcess_pt)"
+                location="http://localhost:8082/soap/CreditProcess?wsdl"
+                soapVersion="1.1"/>
+  </reference>
+
+  <reference name="ValuationProcessRef" ui:wsdlLocation="../soa-valuation-composite/ValuationProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess#wsdl.interface(ValuationProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/ValuationProcess#wsdl.endpoint(valuationprocess_client_ep/ValuationProcess_pt)"
+                location="http://localhost:8083/soap/ValuationProcess?wsdl"
+                soapVersion="1.1"/>
+  </reference>
+
+  <reference name="UnderwritingProcessRef" ui:wsdlLocation="../soa-underwriting-composite/UnderwritingProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess#wsdl.interface(UnderwritingProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/UnderwritingProcess#wsdl.endpoint(underwritingprocess_client_ep/UnderwritingProcess_pt)"
+                location="http://localhost:8084/soap/UnderwritingProcess?wsdl"
+                soapVersion="1.1"/>
+  </reference>
+
+  <reference name="DisbursementProcessRef" ui:wsdlLocation="../soa-disbursement-composite/DisbursementProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess#wsdl.interface(DisbursementProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/DisbursementProcess#wsdl.endpoint(disbursementprocess_client_ep/DisbursementProcess_pt)"
+                location="http://localhost:8085/soap/DisbursementProcess?wsdl"
+                soapVersion="1.1"/>
+  </reference>
+
+  <reference name="NotificationProcessRef" ui:wsdlLocation="../soa-notification-composite/NotificationProcess.wsdl">
+    <interface.wsdl interface="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess#wsdl.interface(NotificationProcess)"/>
+    <binding.ws port="http://xmlns.oracle.com/LoanOrchestration/NotificationProcess#wsdl.endpoint(notificationprocess_client_ep/NotificationProcess_pt)"
+                location="http://localhost:8086/soap/NotificationProcess?wsdl"
+                soapVersion="1.1"/>
+  </reference>
+
+  <!-- Wires binding main orchestrator to downstream sub-composites -->
+  <wire>
+    <source.uri>loanapproval_client_ep</source.uri>
+    <target.uri>LoanApprovalProcess/loanapproval_client</target.uri>
+  </wire>
+  <wire>
+    <source.uri>LoanApprovalProcess/CreditProcessRef</source.uri>
+    <target.uri>CreditProcessRef</target.uri>
+  </wire>
+  <wire>
+    <source.uri>LoanApprovalProcess/ValuationProcessRef</source.uri>
+    <target.uri>ValuationProcessRef</target.uri>
+  </wire>
+  <wire>
+    <source.uri>LoanApprovalProcess/UnderwritingProcessRef</source.uri>
+    <target.uri>UnderwritingProcessRef</target.uri>
+  </wire>
+  <wire>
+    <source.uri>LoanApprovalProcess/DisbursementProcessRef</source.uri>
+    <target.uri>DisbursementProcessRef</target.uri>
+  </wire>
+  <wire>
+    <source.uri>LoanApprovalProcess/NotificationProcessRef</source.uri>
+    <target.uri>NotificationProcessRef</target.uri>
+  </wire>
+
+</composite>

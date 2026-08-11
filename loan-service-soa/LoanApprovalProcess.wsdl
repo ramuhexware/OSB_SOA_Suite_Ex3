@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="LoanApprovalProcess"
+                  targetNamespace="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess"
+                  xmlns:tns="http://xmlns.oracle.com/LoanOrchestration/LoanApprovalProcess"
+                  xmlns:types="http://xmlns.oracle.com/LoanOrchestration/types"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+  <wsdl:types>
+    <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:import namespace="http://xmlns.oracle.com/LoanOrchestration/types" schemaLocation="LoanWorkflow.xsd" />
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="LoanApprovalRequestMessage">
+    <wsdl:part name="payload" element="types:LoanApplicationRequest"/>
+  </wsdl:message>
+  <wsdl:message name="LoanApprovalResponseMessage">
+    <wsdl:part name="payload" element="types:LoanApplicationResponse"/>
+  </wsdl:message>
+  <wsdl:message name="SanctionListFaultMessage">
+    <wsdl:part name="fault" element="types:FaultDetail"/>
+  </wsdl:message>
+
+  <wsdl:portType name="LoanApprovalProcess">
+    <wsdl:operation name="initiateLoan">
+      <wsdl:input message="tns:LoanApprovalRequestMessage"/>
+      <wsdl:output message="tns:LoanApprovalResponseMessage"/>
+      <wsdl:fault name="sanctionFault" message="tns:SanctionListFaultMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="LoanApprovalProcessBinding" type="tns:LoanApprovalProcess">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="initiateLoan">
+      <soap:operation soapAction="initiateLoan"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="sanctionFault">
+        <soap:fault name="sanctionFault" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="loanapproval_client_ep">
+    <wsdl:port name="LoanApprovalProcess_pt" binding="tns:LoanApprovalProcessBinding">
+      <soap:address location="http://localhost:8081/soap/LoanApprovalProcess"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>
